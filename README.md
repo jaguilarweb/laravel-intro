@@ -409,7 +409,7 @@ En este caso, estamos mostrando el nombre del usuario que creó el post. Para el
     }
 ```
 
-## Incio de sesión
+## Inicio de sesión
 
 Para el inicio de sesión, Laravel nos proporciona un sistema de autenticación que nos permite crear un sistema de inicio de sesión de forma rápida y sencilla. 
 
@@ -477,6 +477,12 @@ npm run dev
 Para probar el loguin usar el usuario de ejemplo ubicable en la bse de datos, la password es 'password' conforme lo configurado en UserFactory para los usuarios fake.
 
 Nota: Debido a pruebas en Docker tuve que modificar los nombres de los servicios y contenedores del Dockerfile, pero no corresponde a requisitos del curso.
+
+## Sistema de autenticación
+
+El sistema de autenticación en Laravel nos permite proteger las rutas de nuestra aplicación y restringir el acceso a los usuarios autenticados. Laravel nos proporciona un middleware que nos permite verificar si un usuario está autenticado y si tiene permisos para acceder a una ruta.
+
+Para efectos de este curso, modificamos el archivo routes->auth.php, para dejar solo las rutas del login considerando que será un sistema de un usuario.
 
 
 
