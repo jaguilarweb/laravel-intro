@@ -147,3 +147,24 @@ RewriteCond %{REQUEST_URI} !^/public/
 RewriteRule ^(.*)$ /public/$1 [L,QSA]
 ```
 
+## NodeJS
+
+Para instalar NodeJS, se debe ingresar al contenedor de php y ejecutar el siguiente comando:
+
+```bash
+apt-get update
+apt-get install -y nodejs
+```
+
+Pero yo incluí el script en Dockerfile:
+
+```Dockerfile
+# NodeJS
+RUN apt-get install -y curl \
+    && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+```
+
+Usé la versión 18 porque la versión del curso genera problemas, ya que el proyecto originalmente lo cree con versión nueva de Laravel.
+
+Nota: Debido a pruebas en Docker tuve que modificar los nombres de los servicios y contenedores, pero no corresponde a requisitos del curso.

@@ -19,6 +19,13 @@ RUN apt-get update -y && apt-get install -y \
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# NodeJS
+RUN apt-get install -y curl \
+   && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+   && apt-get install -y nodejs \
+   && npm install -g npm
+
+
 # PHP Extension
 RUN docker-php-ext-install gettext intl pdo_mysql gd
 

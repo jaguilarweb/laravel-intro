@@ -16,6 +16,13 @@ Laravel es un framework de PHP que nos permite crear aplicaciones web de forma r
 ## Requisitos
 Para poder trabajar con Laravel necesitamos tener instalado PHP, Composer y Node.js.
 
+Versiones del profesor:
+- PHP 8.0.8 
+- Composer 2.1.3
+- Laravel 4.2.7
+- NPM 6.14.14
+- Mariadb 15.1
+
 ## Estructura de carpetas
 
 APP : Aqui vivira todo nuestro codigo principal.
@@ -154,9 +161,9 @@ Una vez llenado el archivo con la estructura de la tabla, ejecutamos de nuevo el
 Los modelos en Laravel nos permiten interactuar con la base de datos de forma sencilla y rápida. Los modelos se definen en archivos PHP que se encuentran en la carpeta app y podemos utilizar el siguiente comando para crear un modelo:
     
 ```bash
-    php artisan make:model NombreModelo
-    */Si uso docker/*
-    docker exec laravel-docker bash -c "php artisan make:model Post -fc"
+php artisan make:model NombreModelo -fc
+*/Si uso docker/*
+docker exec laravel-docker bash -c "php artisan make:model Post -fc"
 ```
 En este caso utilizamos las siguientes banderas:
 - f: Para crear un factory
@@ -167,6 +174,8 @@ Primero trabajaremos con los factories
 ## Factories
 Los factories en Laravel nos permiten generar datos falsos para probar nuestras aplicaciones. Los factories se definen en archivos PHP que se encuentran en la carpeta database/factories y podemos utilizar el siguiente comando para crear un factory (si no lo cree al mismo momento que cree el modelo):
 
+Este comando lo utilizamos en caso de que no hubieramos creado el factory junto al modelo, con la bandera -f del caso anterior.
+
 ```bash
     php artisan make:factory NombreFactory
 */Si uso docker/*
@@ -174,5 +183,303 @@ Los factories en Laravel nos permiten generar datos falsos para probar nuestras 
 ```
 
 En el interior del archivo definimos la estructura para crear datos falsos.
+
+```php
+class PostFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'title' => $this->faker->sentence(),
+            'slug' => $this->faker->sentence(),
+            'body' => $this->faker->text(2200),
+        ];
+    }
+}
+```
+¿Qué es el método `faker`?
+Es un generador de datos falsos que nos proporciona Laravel. Con este generador podemos crear nombres, direcciones, textos, etc.
+
+Este método contiene sentencias como:
+- sentence(): Genera una oración.
+- text(): Genera un texto.
+- name(): Genera un nombre.
+- email(): Genera un email.
+
+
+## Seeders
+Los seeders en Laravel nos permiten ejecutar los factories y poblar nuestra base de datos con datos falsos. Los seeders se definen en archivos PHP que se encuentran en la carpeta database/seeders.
+
+En este caso, el seeder es el DatabaseSeeder, y en el colocamos el siguiente código:
+    
+```php
+public function run()
+{
+    \App\Models\User::factory()->create();
+    \App\Models\Post::factory(80)->create();
+}
+```
+En este caso, estamos creando 80 posts y un usuario.
+Para ejecutar los seeders, deberemos correr la migración:
+
+```bash
+php artisan migrate:refresh --seed
+*/Si uso docker/*
+docker exec laravel-docker bash -c "php artisan migrate:refresh --seed"
+```
+
+Los datos semillas se generarán porque existe el factory, en este caso el PostFactory.
+
+Si observamos en phpMyAdmin podemos ver que se crearon los registros.
+
+No obstante, al poblar las tablas con esta forma, el atributo `slug` se pobla con un texto corto pero no todo lo simple que deseamos para un `slug`propiamente tal, considerando que lo incluiremos como la url de nuestro recurso.
+
+Ejemplo, si vemos el registro creado se ve así:
+
+```mysql
+| id |      title        |       slug        |       body        |      created_at       |        updated_at         |
+|----|-------------------|-------------------|-------------------|-----------------------|---------------------------|
+| 1  | Quisquam et autem | Quisquam et autem | Quisquam et autem |   2021-09-29 00:00:   |    2021-09-29 00:00:00    |
+
+```
+Para que el slug o cualquier texto sea realmente amigable para nuestro objetivo, es decir se pueda convertir en una url, en el factory importaremos una clase:
+    
+```php
+use Illuminate\Support\Str;
+```
+
+Y modificamos el código:
+    
+```php
+    public function definition(): array
+{
+    return [
+        'title' => $title = $this->faker->sentence(),
+        'slug' => Str::slug($title),
+        'body' => $this->faker->text(2200),
+    ];
+}
+```
+Ahora volvemos a correr la migración con la bandera de seed.
+    
+```bash
+php artisan migrate:refresh --seed
+*/Si uso docker/*
+docker exec laravel-docker bash -c "php artisan migrate:refresh --seed"
+```
+
+Ahora si observamos en phpMyAdmin, veremos que el slug se generó de forma amigable para una url:
+    
+```mysql
+| id |      title        |       slug        |       body        |      created_at       |        updated_at         |
+|----|-------------------|-------------------|-------------------|-----------------------|---------------------------|
+| 1  | Quisquam et autem | quisquam-et-autem | Quisquam et autem |   2021-09-29 00:00:   |    2021-09-29 00:00:00    |
+```
+
+## Eloquent
+
+Eloquent es el ORM (Object-Relational Mapping) que nos proporciona Laravel y que nos permite interactuar con la base de datos de forma sencilla y rápida. Eloquent nos permite realizar consultas a la base de datos, insertar, actualizar y eliminar registros, etc.
+
+Revisando el ciclo de la navegación:
+
+1. El usuario ingresa a la URL de la aplicación, es decir, a las rutas, ejemplo `route/web.php`
+2. La ruta llama a un controlador, ejemplo `PostController`. Este controlador debe contener toda la lógica de la consulta, incluido proporcionar los datos que obtiene de la base de datos.
+3. El controlador llama al modelo, ejemplo `Post`. Este modelo se encarga de interactuar con la base de datos. Los modelos representan las tablas de la base de datos.
+4. El modelo se comunica con la base de datos y obtiene los datos solicitados.
+5. El modelo devuelve los datos al controlador.
+6. El controlador devuelve los datos a la vista, ejemplo `index.blade.php`.
+7. La vista muestra los datos al usuario.
+
+En este caso, desde PageController importamos los modelos:
+        
+```php
+use App\Models\Post;
+use App\Models\User;
+```
+
+Ahora en el PageController, en vez de usar data fake, hacemos la consulta a la base de datos con los comandos Elocuent.
+
+```php
+    public function blog()
+    {
+        $posts = Post::get();
+        return view('blog', ['posts' => $posts]);
+    }
+    public function post(Post $post)
+    {
+        return view('post', ['post' => $post]);
+    }
+```
+
+Y hacemos una modificación en el caso de la ruta post, ya que el parámetro slug ahora se obtendrá del atributo del objeto post.
+
+```php
+Route::controller(PageController::class)->group(function(){
+    Route::get('blog/{post:slug}',   'post')->name('post');
+});
+```
+
+En el pageController podemos usar las siguientes sentencias de Eloquent:
+    
+```php
+$posts =    
+    Post::get();-> Trae todos los registros de la base de datos.
+    Post::frist();-> Trae el primer registro de la base de datos.
+    Post::find(id); -> Busca un registro en la base de datos por medio de su id.
+    Post::latest(); -> Trae todos los registros de la base de datos, y los ordena de forma descendente.
+    Post::where('slug', $slug)->first(); -> 
+
+    dd($post);
+
+```
+
+## Relationships
+
+Las relaciones en Laravel nos permiten definir la relación entre dos tablas de la base de datos. Laravel nos proporciona varios tipos de relaciones, como las relaciones uno a uno, uno a muchos, muchos a muchos, etc.
+
+NOTA: La siguiente explicación y modificación de las tablas lo realizamos en el supuesto que es un ejercicio y que correremos las migraciones para borrar todo y actualizar. Por tanto, la data de este ejercicio NO es importante y No debemos realizar esto nunca en producción.
+
+Para lo anterior, crearemos una nueva columna en la tabla 'posts' mediante el archivo create de migrations.
+
+```php
+    public function up(): void
+    {
+        Schema::create('posts', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->string('title');
+            $table->string('slug')->unique();
+            $table->text('body');
+            $table->timestamps();
+        });
+    }
+```
+
+En este caso, la columna 'user_id' será la llave foránea que se relacionará con la tabla 'users', a través de la referencia de la 'id'.
+
+Como hemos creado una nueva columna y necesitamos los datos fake, haremos una modificación en el PostFactory para agregar el atributo 'user_id' al objeto que crearemos en la tabla.
+    
+```php
+    public function definition(): array
+    {
+        return [
+            'user_id' => 1, //Atributo agregado al usuario de prueba
+            'title' => $title = $this->faker->sentence(),
+            'slug' => Str::slug($title),
+            'body' => $this->faker->text(2200),
+        ];
+    }
+```
+
+Ahora corremos la migración.
+        
+```bash
+php artisan migrate:refresh --seed
+*/Si uso docker/*
+docker exec laravel-docker bash -c "php artisan migrate:refresh --seed"
+```
+
+Veremos la utilidad de esto haciendo una modificación a la vista de blog:
+        
+```php
+    @foreach( $posts as $post )
+        <p>
+            <strong>{{ $post->id }}</strong>
+            <a href="{{ route('post', $post->slug) }}">
+                {{ $post->title }}
+            </a>
+            <br>
+            <span>{{$post->user->name}}</span>
+        </p>
+    @endforeach
+```
+
+En este caso, estamos mostrando el nombre del usuario que creó el post. Para ello, en el modelo Post, agregamos la relación con el modelo User, de esta forma Laravel se da por enterada que eciste esta relación.
+
+```php
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+```
+
+## Incio de sesión
+
+Para el inicio de sesión, Laravel nos proporciona un sistema de autenticación que nos permite crear un sistema de inicio de sesión de forma rápida y sencilla. 
+
+Primero instalaremos con composer el proyecto breeze.
+    
+```bash
+composer require laravel/breeze --dev
+*/Si uso docker/*
+docker exec laravel-docker bash -c "composer require laravel/breeze --dev"
+```
+Breeze:
+- Es un paquete de Laravel que nos permite crear un sistema de autenticación de forma rápida y sencilla.
+- Nos proporciona las vistas y rutas necesarias para el inicio de sesión, registro, olvidé mi contraseña, etc.
+- Nos proporciona un sistema de autenticación completo que podemos personalizar y adaptar a nuestras necesidades.
+
+Una vez instalado, corremos el siguiente comando dentro del contenedor:
+    
+```bash
+php artisan breeze:install
+```
+Nos da varias opciones, voy a escoger "Blade with Alphine"
+
+
+Este comando nos instalará las vistas y rutas necesarias para el inicio de sesión, registro, olvidé mi contraseña, etc. Es decir, activa el modulo de inicio sesión.
+
+No obstante, considerar que borrará las rutas creadas anteriormente así que las guardaremos para incluirlas posteriormente.
+
+Luego, podemos observar que en el archivo de rutas web.php a modificado el archivo, así que nosotros volvemos a incorporar las rutas que estabamos registrando.
+El archivo queda:
+
+```php
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PageController;
+use Illuminate\Support\Facades\Route;
+
+Route::controller(PageController::class)->group(function(){
+    Route::get('/',             'home')->name('home');
+    Route::get('blog',          'blog')->name('blog');
+    Route::get('blog/{post:slug}',   'post')->name('post');
+});
+//Dejar esta parte del código para que no de error al loguear un usuario ejemplo
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+require __DIR__.'/auth.php';
+```
+
+Ahora, para ver los cambios vamos a hacer una modificación del archivo de vista template.blade.php.
+
+Ahora ejecutamos los comandos, dentro del contenedor.
+        
+```bash
+npm install
+*/Aunque lo usan en el curso no es necesario correo el siguiente/*
+npm run dev
+```
+
+Para probar el loguin usar el usuario de ejemplo ubicable en la bse de datos, la password es 'password' conforme lo configurado en UserFactory para los usuarios fake.
+
+Nota: Debido a pruebas en Docker tuve que modificar los nombres de los servicios y contenedores del Dockerfile, pero no corresponde a requisitos del curso.
+
+
+
+
 
 
