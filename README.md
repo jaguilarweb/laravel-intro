@@ -610,4 +610,61 @@ Con esto, ya podemos ver las publicaciones en la vista de posts.
 - El usuario, accede a la vista a través de la ruta.
 
 
+### Eliminar publicaciones (Delete)
+
+Para eliminar una publicación, vamos a modificar el controlador para que elimine un post de la base de datos.
+
+La ruta ya está creada, puesto anteriormente utilizamos como definición de ruta la que nos da laravel (sección 'Panel Administrativo'). 
+
+```php
+Route::resource('posts', PostController::class)->except('show');
+```
+
+Al escoger esta estructura de rutas, laravel nos deja automáticamente dispibile las rutas con métodos predefinidos. Estas rutas con métodos prefefinidos son los que vimos al listar con el comando `php artisan route:list` y para poder hacer uso de ellos debemos usar los nombres que stán definidos como por ejemplo 'destroy' para 'eliminar'.
+
+Si hubiera usado como definición de ruta las iniciales como:
+```php
+    Route::get('blog/{post:slug}', 'post')->name('post');
+```
+Entonces habria podido usar una configuración personalizada, pero tendría que crear todo lo que laravel me otorga como ya hecho.
+
+Por tanto, ahora nos vamos directo al controlador, y en el creamos el metodo destroy.
+
+**CONTROLADOR**
+
+`app->http->Controllers->PostController.php`
+
+```php
+    public function destroy(Post $post)
+    {
+        $post->delete();
+        return back();
+    }
+```
+
+Con esto, ya podemos eliminar una publicación desde la vista de posts.
+Por tanto, en la vista hacemos una modificación para incluir un formulario.
+
+**VISTA**
+`resources->views->posts->index.blade.php`
+    
+```php
+<td class="px-6 py-4">
+    <form action="{{ route('posts.destroy', $post) }}" method="POST">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="text-red-600">Eliminar</button>
+    </form>
+</td>
+```
+
+Donde:
+- @csrf: Es una directiva de Blade que nos permite proteger nuestro formulario contra ataques CSRF, ya que nos genera un token de seguridad.
+- @method('DELETE'): Es una directiva de Blade que nos permite enviar una petición DELETE al servidor.
+
+
+
+
+
+
 
