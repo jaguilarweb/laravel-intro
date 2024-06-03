@@ -469,19 +469,18 @@ Ahora ejecutamos los comandos, dentro del contenedor.
         
 ```bash
 npm install
-*/Aunque lo usan en el curso no es necesario correo el siguiente/*
 npm run dev
 ```
 
 Para probar el loguin usar el usuario de ejemplo ubicable en la bse de datos, la password es 'password' conforme lo configurado en UserFactory para los usuarios fake.
 
-Nota: Debido a pruebas en Docker tuve que modificar los nombres de los servicios y contenedores del Dockerfile, pero no corresponde a requisitos del curso.
+Nota: Debido a pruebas en Docker tuve que modificar los nombres de los servicios y contenedores del Dockerfile, y el archivo .env, pero no corresponde a requisitos del curso. Es por ello que en la documentación e incluso en los commit puede haberse registrado o no la modificación del nombre de los contenedores.
 
 ## Sistema de autenticación
 
 El sistema de autenticación en Laravel nos permite proteger las rutas de nuestra aplicación y restringir el acceso a los usuarios autenticados. Laravel nos proporciona un middleware que nos permite verificar si un usuario está autenticado y si tiene permisos para acceder a una ruta.
 
-Para efectos de este curso, modificamos el archivo routes->auth.php, para dejar solo las rutas del login considerando que será un sistema de un usuario.
+Para efectos de este curso, modificamos el archivo routes->auth.php, para dejar solo las rutas del login considerando que será un sistema administrado por solo un usuario.
 
 ## Panel Administrativo
 
@@ -511,7 +510,8 @@ GET|HEAD        posts/{post}/edit ......... posts.edit › PostController@edi
 ```
 
 Vamos a eliminar una de las rutas, para ello usaremos el método except:
-    
+
+Ruta: web.php
 ```php
 Route::resource('posts', PostController::class)->except('show');
 ```
@@ -547,4 +547,67 @@ http://localhost:8000/posts
 
 - Si no estoy logueado no puedo ver la página (a esta altura sale un error)
 - Pero si estoy logueado puedo ver la página con la misma infraestructura de estilo que el dashboard.
+
+
+### Listado de publicaciones
+
+Para listar las publicaciones, vamos a modificar el controlador para que nos devuelva los datos de la base de datos.
+
+
+1.- Desde la ruta web.php enviamos al controlador la consulta
+
+**RUTA**
+`app->routes->web.php`
+
+```php
+Route::resource('posts', PostController::class)->except('show');
+```
+
+2.- En el controlador, modificamos el método index para que nos devuelva los datos de la base de datos.
+
+**CONTROLADOR**
+
+`app->http->Controllers->PostController.php`
+
+```php
+    public function index()
+    {
+        return view('posts.index', [
+            'posts' => Post::latest()->paginate()
+        ]);
+    }
+```
+
+3.- En la vista, vamos a modificar el archivo index.blade.php para que muestre los datos de la base de datos.
+
+**VISTA**
+
+`app->resources->views->posts->index.blade.php`
+
+```php
+<div class="p-6 text-gray-900">
+    <table class="mb-4">
+        @foreach ($posts as $post)
+        <tr class="border-b border-gray-200 text-sm">
+            <td class="px-6 py-4">{{ $post->title }}</td>
+            <td class="px-6 py-4">
+                <a href="" class="text-indigo-600">Editar</a>
+            </td>
+            <td class="px-6 py-4"> Eliminar</td>
+        </tr>
+        @endforeach
+    </table>
+    {{ $posts->links() }}
+</div>
+```
+
+Con esto, ya podemos ver las publicaciones en la vista de posts.
+
+**Resumen**:
+- Creamos las rutas que apuntan a un controlador.
+- El controlador ejecuta una lógica, entre la que se encuentra la de devolver los datos de la base de datos y enviar de regreso esos datos.
+- La vista, recibe los datos desde el controlador y se encarga de mostrar los datos al usuario.
+- El usuario, accede a la vista a través de la ruta.
+
+
 
