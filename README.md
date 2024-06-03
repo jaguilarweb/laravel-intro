@@ -5,7 +5,7 @@
 
 Este proyecto son notas del Curso Introducción a Laravel9. Este curso recorre los fundamentos del framework Laravel para PHP.
 
-Nota personal: También aprovecho este curso para practicar el uso y configuración de contenedores Docker para crear mi ambientes de desarrollo; el uso de Git para prácticar comandos de esta herramienta de versionamiento y subir un repositorio remoto a Github; PHPUnit para realizar pruebas unitarias y el uso de Composer como manejador de dependencias de php.
+Nota personal: También aprovecho este curso para practicar el uso y configuración de contenedores Docker para crear mi ambiente de desarrollo; el uso de Git para prácticar comandos de esta herramienta de versionamiento y subir un repositorio remoto a Github; PHPUnit para realizar pruebas unitarias y el uso de Composer como manejador de dependencias de php.
 
 Plataforma: Platzi 
 Prof: Italo Morales
@@ -25,36 +25,35 @@ Versiones del profesor:
 
 ## Estructura de carpetas
 
-APP : Aqui vivira todo nuestro codigo principal.
+**app** : Aquí vivira todo nuestro codigo principal.
 
-Bootstrap: Utilizada por laravel para mejorar el rendimiento
+**bootstrap** : Utilizada por laravel para mejorar el rendimiento
 
-config: Cada paquete que se instale. Se genera un archivo que se puede editar y modificar.
+**config** : Cada paquete que se instale. Se genera un archivo que se puede editar y modificar.
 
-Database : Carpeta principal de las bases de datos
+**Database** : Carpeta principal de las bases de datos
 
-a. migrations : Archivos con la estructura principal para desarrollar tablas.
+a. **migrations** : Archivos con la estructura principal para desarrollar tablas.
 
-b. factories: nos permite desarrollar datos falsos para probar aplicacion
+b. **factories** : nos permite desarrollar datos falsos para probar aplicación.
 
-c. seeders: encargada de ejecutar los factories que desarrollemos
+c. **seeders** : encargada de ejecutar los factories que desarrollemos.
 
-lang: idioma
+**lang** : idioma
 
-public: punto de acceso a web.
+**public** : punto de acceso a web.
 
-resources: archivos originales css,javascript y vistas
+**resources** : archivos originales css, javascript y vistas.
 
-routes: configuramos rutas del trabaja principalmente en web.php
+**routes** : configuramos rutas del trabaja principalmente en web.php.
 
-storage: elementos generados por laravel. cache o si usuario guarda muchos archivos se pueden guardar hay. 11 test: Pruebas
+**storage** : elementos generados por laravel. cache o si usuario guarda muchos archivos se pueden guardar hay. 11 test: Pruebas
 
-vendor: Nose toca esta carpeta. Hay se ve todo lo que se instala con composer.
+**vendor**: Nose toca esta carpeta. Hay se ve todo lo que se instala con composer.
 
 ## Artisan
 Artisan es una herramienta de línea de comandos que nos proporciona Laravel y que nos permite realizar tareas de forma rápida y sencilla. Con Artisan podemos crear controladores, modelos, migraciones, seeders, etc.
-Para utilizar Artisan debemos abrir una terminal y acceder a la carpeta de nuestro proyecto. Una vez dentro, podemos utilizar los siguientes comand
-os para crear un controlador, modelo, migración, etc.
+Para utilizar Artisan debemos abrir una terminal y acceder a la carpeta de nuestro proyecto. Una vez dentro, podemos utilizar los siguientes comandos para crear un controlador, modelo, migración, etc.
 
 Para usarlo en docker, desde la terminal del proyecto:
 
@@ -484,8 +483,68 @@ El sistema de autenticación en Laravel nos permite proteger las rutas de nuestr
 
 Para efectos de este curso, modificamos el archivo routes->auth.php, para dejar solo las rutas del login considerando que será un sistema de un usuario.
 
+## Panel Administrativo
 
+Iniciamos agregando una ruta en el archivo web.php
 
+```php
+Route::resource('posts', PostController::class);
+```
+Luego en la terminal corremos el siguiente comando:
+        
+```bash
+php artisan route:list
+*/Si uso docker/*
+docker exec laravel-docker-intro bash -c "php artisan route:list"
+```
 
+Con esto, vemos que se crearon las rutas para el CRUD de posts.
 
+```bash
+GET|HEAD        posts ................... posts.index › PostController@index
+POST            posts ................... posts.store › PostController@store
+GET|HEAD        posts/create .......... posts.create › PostController@create
+GET|HEAD        posts/{post} .............. posts.show › PostController@show
+PUT|PATCH       posts/{post} .......... posts.update › PostController@update
+DELETE          posts/{post} ........ posts.destroy › PostController@destroy
+GET|HEAD        posts/{post}/edit ......... posts.edit › PostController@edi
+```
+
+Vamos a eliminar una de las rutas, para ello usaremos el método except:
+    
+```php
+Route::resource('posts', PostController::class)->except('show');
+```
+
+Si ejecutamos de nuevo el comando de listar podemos ver que ya se ha eliminado del listado la ruta:
+    
+```bash
+GET|HEAD        posts ................... posts.index › PostController@index
+POST            posts ................... posts.store › PostController@store
+GET|HEAD        posts/create .......... posts.create › PostController@create
+
+PUT|PATCH       posts/{post} .......... posts.update › PostController@update
+DELETE          posts/{post} ........ posts.destroy › PostController@destroy
+GET|HEAD        posts/{post}/edit ......... posts.edit › PostController@edit
+```
+Ahora modificamos el controlador:
+
+```php
+    public function index()
+    {
+        return view('posts.index');
+    }
+```
+Y creamos la vista, para ello vamos a app->resources->views y creamos un directorio y un archivo 'post/index.blade.php'.
+
+Aprovechamos el mismo código del dashboard y modificamos algunos elementos y con ello logramos la vista de Post.
+
+Lo interesante de esto es que al ingresar en el browser a:
+        
+```
+http://localhost:8000/posts
+```
+
+- Si no estoy logueado no puedo ver la página (a esta altura sale un error)
+- Pero si estoy logueado puedo ver la página con la misma infraestructura de estilo que el dashboard.
 
